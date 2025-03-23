@@ -9,13 +9,13 @@ webhooks:
     clientConfig:
       service:
         name: {{ include "webhook.fullname" . }}
-        namespace: default
-        path: /mutateLabels
+        namespace: workload-label-mutating-webhook
+        path: "/mutate-labels"
       caBundle: <CA-BUNDLE>
     rules:
       - operations: ["CREATE"]
-        apiGroup: [""]
-        apiVersion: ["v1"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
         resources: ["pods"]
     admissionReviewVersions: ["v1"]
     sideEffects: None

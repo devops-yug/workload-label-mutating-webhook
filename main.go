@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	http.HandleFunc("/mutateLabels", mutateLabels)
+	http.HandleFunc("/mutate-labels", mutateLabels)
 	tlsMode := false
 	if tlsEnv, exists := os.LookupEnv("TLS_MODE"); exists && tlsEnv == "true" {
 		tlsMode = true
