@@ -1,0 +1,22 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "webhook.fullname" . }}
+  labels:
+    {{- include "webhook.labels" . | nindent 4 }}
+webhooks:
+  - name: {{ include "webhook.fullname" . }}.devops-yug.github.com
+    clientConfig:
+      service:
+        name: {{ include "webhook.fullname" . }}
+        namespace: default
+        path: /mutateLabels
+      caBundle: <CA-BUNDLE>
+    rules:
+      - operations: ["CREATE"]
+        apiGroup: [""]
+        apiVersion: ["v1"]
+        resources: ["pods"]
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    timeoutsSeconds: 10
