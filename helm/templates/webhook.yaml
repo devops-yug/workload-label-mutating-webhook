@@ -4,19 +4,26 @@ metadata:
   name: {{ include "webhook.fullname" . }}
   labels:
     {{- include "webhook.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade,post-rollback,pre-delete
 webhooks:
   - name: {{ include "webhook.fullname" . }}.devops-yug.github.com
     clientConfig:
       service:
-        name: {{ include "webhook.fullname" . }}
-        namespace: workload-label-mutating-webhook
+        name: {{ include "webhook.servicename" . }}
+        namespace: {{ include "webhook.fullname" . }}
         path: "/mutate-labels"
-      caBundle: <CA-BUNDLE>
+      caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURoekNDQW0rZ0F3SUJBZ0lVYjcrSENDdisvSHp0T3dwRHJQbDB5NU9DaGVjd0RRWUpLb1pJaHZjTkFRRUwKQlFBd016RXhNQzhHQTFVRUF3d29kMnh0ZHk1M2IzSnJiRzloWkMxc1lXSmxiQzF0ZFhSaGRHbHVaeTEzWldKbwpiMjlyTG5OMll6QWVGdzB5TlRBek16QXdNakV5TkRkYUZ3MHlOakF6TXpBd01qRXlORGRhTURNeE1UQXZCZ05WCkJBTU1LSGRzYlhjdWQyOXlhMnh2WVdRdGJHRmlaV3d0YlhWMFlYUnBibWN0ZDJWaWFHOXZheTV6ZG1Nd2dnRWkKTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFEb1VvUUZFK0dkVzl3WTFadGliMVNiWWFDZwpISUx6WG9heVdUQmdVd1lIajdsU2xESW5qRDFhSGZzS1NTZTNZaTdKZnZLZEorVUs0Z2FJMVJheUpPdGtLUkdpCmxtaHFMaUdVUk9qM2tTVkZWc3IzYlZkc1V5Ym5ZNHZ6K2FlREc4KzNSS2k0VnFxMkhVdThQajVFNmprMEJCRksKZlcyaE80ZlVQZTFPWkRxU251SjduVm9zNW5aR0dHeGdYN2FBN2dyRzRDWWtHZ202QTRvOVRIS0ZsUHBSc0gzNwpla3pqTFBIMllld25XMU1CN0tya0xMQy9EQXJhbUZ1b1M1S0lrY2dwWEpKSEQ3blFvV1MwR0VnaGZQV2h1Yy9BCk9HK1A3QzRvc2J3U3d4WjQrRS9OT3p5cjVVVjNUZ0syTy9iU3NWeFkvTi9pcVdOQ0N4QVJDRG1idDI4OUFnTUIKQUFHamdaSXdnWTh3Q3dZRFZSMFBCQVFEQWdRd01CTUdBMVVkSlFRTU1Bb0dDQ3NHQVFVRkJ3TUJNR3NHQTFVZApFUVJrTUdLQ0tIZHNiWGN1ZDI5eWEyeHZZV1F0YkdGaVpXd3RiWFYwWVhScGJtY3RkMlZpYUc5dmF5NXpkbU9DCk5uZHNiWGN1ZDI5eWEyeHZZV1F0YkdGaVpXd3RiWFYwWVhScGJtY3RkMlZpYUc5dmF5NXpkbU11WTJ4MWMzUmwKY2k1c2IyTmhiREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBTzR3QUlrcFBoZXBQbmJuV2RwZnEzR20zQTBnawo4aXFPcFRGMllBOTlValV1SlZVeTRXRzNDd0tDV2RJUjVuLzhlc01lR1pYRWpFUlVtQVN4Q2o4SXVKUDRzSmN1CnJZSnVqK3gvUUJhK201RGhqaCtxbmsvb0FjSFhQcFFqNDZmZWkxaVI5aWgzVlJaWENQV0JqVWVPdWtEWGJTTE0KQ0FUMVU2NFc0U04rTllWVFFMYllaT3ppSTVTaTlIRGJoeW9UMTJab1dUb1lGMXJTNDI3MkFqQWRsRTkvN1lhRwp0eGs5WTZVenNrREpPY0lSK3pJT2haNWdHSzRXbkc2KzBUT0UrUFlGZjdMWHBXbFNUZjVubHhWdk5KT1o1MjhCClptZTZleUpVdHc4OTFjVFVYa0pDTjMvSVNNN3dGZjFFejhrb0drTi9Tai9rckhoQUQweHRKMTFyc3c9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
     rules:
       - operations: ["CREATE"]
         apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
+    namespaceSelector:
+      matchExpressions:
+      - key: "kubernetes.io/metadata.name"
+        operator: "NotIn"
+        values: ["kube-system", "default", "kube-public", "workload-label-mutating-webhook"]
     admissionReviewVersions: ["v1"]
     sideEffects: None
     timeoutsSeconds: 10

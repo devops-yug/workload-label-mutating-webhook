@@ -24,6 +24,22 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{/*
+Create a default short service name.
+*/}}
+{{- define "webhook.servicename" -}}
+{{- $fullname := .Values.fullnameOverride | default .Release.Name -}}
+{{- $words := split "-" "workload-label-mutating-webhook" -}}
+{{- $initials := "" -}}
+{{- range $words -}}
+    {{- if gt (len .) 0 -}}
+        {{- $firstChar := printf "%s" (substr 0 1 .) -}}
+        {{- $initials = printf "%s%s" $initials $firstChar -}}
+    {{- end -}}
+{{- end -}}
+{{- $initials | lower -}}
+{{- end }}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "webhook.chart" -}}

@@ -19,12 +19,23 @@ This project implements a **mutating admission webhook** in Go, designed to enha
    ```bash
    git clone https://github.com/devops-yug/workload-label-mutating-webhook.git
    cd workload-label-mutating-webhook/helm
-2. **Deploy the Webhook** Apply the provided Kubernetes manifests:
+2. **Create TLS certs** before deploying the Webhook:
     ```bash
-   helm install workload-label-mutating-webhook \
+    openssl genrsa -out webhook.key 2048
+    openssl req -new -key webhook.key -out webhook.csr -config csr.conf -subj "/CN=wlmw.workload-label-mutating-webhook.svc"
+    openssl x509 -req -days 365 -in webhook.csr -signkey webhook.key -out webhook.crt -extensions v3_req -extfile csr.conf
+3. **Create TLS secret** used for service and webhook deployment:
+    ```bash
+    kubectl create secret tls webhook-secret --cert=webhook.crt --key=webhook.key -n workload-label-mutating-webhook
+4. Configure CA-Bundle in [Webhook](./helm/templates/webhook.yaml) with following value.
+    ```bash
+    cat webhook.crt | base64 | tr -d '\n'
+5. **Deploy the Webhook** Apply the provided Kubernetes manifests:
+    ```bash
+   helm upgrade --install workload-label-mutating-webhook \
    --namespace workload-label-mutating-webhook \
    --create-namespace .
-3. **Setup Namespace Labels** Add labels to namespaces using:
+6. **Setup Namespace Labels** Add labels to namespaces using:
     ```bash
     kubectl label namespace <namespace-name> <key>=<value>
 ## Usage

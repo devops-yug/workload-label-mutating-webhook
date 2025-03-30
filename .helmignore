@@ -21,3 +21,7 @@
 .idea/
 *.tmproj
 .vscode/
+
+**/*go.sum
+**/*webhook**
+**csr*

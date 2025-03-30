@@ -24,7 +24,17 @@ var (
 )
 
 func main() {
+	go func() {
+		http.HandleFunc("/health-check", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Healthy")) // Simple response
+		})
+		log.Println("Starting health-check server on HTTP port 8080")
+		log.Fatal(http.ListenAndServe(":8081", nil))
+	}()
+
 	http.HandleFunc("/mutate-labels", mutateLabels)
+
 	tlsMode := false
 	if tlsEnv, exists := os.LookupEnv("TLS_MODE"); exists && tlsEnv == "true" {
 		tlsMode = true
@@ -70,7 +80,7 @@ func mutateLabels(w http.ResponseWriter, r *http.Request) {
 		pod.Labels = make(map[string]string)
 	}
 
-	log.Printf("Patching Pod %s with %s namespace labels", pod.Name, &admissionReview.Request.Namespace)
+	log.Printf("Patching Pod %s with %s namespace labels", pod.Name, admissionReview.Request.Namespace)
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -98,6 +108,8 @@ func mutateLabels(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error loading ignore labels: %v\n", err)
 		return
 	}
+	//adding autogenerate label in ignorelist.
+	ignoreLabelList["kubernetes.io/metadata.name"] = true
 
 	// Print the populated map (or empty map if file wasn't provided)
 	log.Println("Ignore Label List:", ignoreLabelList)
@@ -107,7 +119,7 @@ func mutateLabels(w http.ResponseWriter, r *http.Request) {
 	if len(pod.Labels) == 0 {
 		initialPatch := map[string]interface{}{
 			"op":     "add",
-			"path":   "metadata/labels",
+			"path":   "/metadata/labels",
 			"values": map[string]string{},
 		}
 		patches = append([]map[string]interface{}{initialPatch}, patches...)
@@ -127,20 +139,20 @@ func mutateLabels(w http.ResponseWriter, r *http.Request) {
 		} else {
 			patch := map[string]interface{}{
 				"op":    "add",
-				"path":  "metadata/labels/" + key,
+				"path":  "/metadata/labels/" + key,
 				"value": value,
 			}
 			patches = append(patches, patch)
 		}
 	}
 
+	log.Printf("Patches: %s", patches)
 	patchBytes, err := json.Marshal(patches)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	admissionReponse := admissionv1.AdmissionResponse{
+	admissionResponse := admissionv1.AdmissionResponse{
 		UID:     admissionReview.Request.UID,
 		Allowed: true,
 		Patch:   patchBytes,
@@ -150,8 +162,8 @@ func mutateLabels(w http.ResponseWriter, r *http.Request) {
 		}(),
 	}
 	log.Println("*** Sending response to K8S Api Server")
-	admissionReview.Response = &admissionReponse
-	if err := json.NewEncoder(w).Encode(admissionReponse); err != nil {
+	admissionReview.Response = &admissionResponse
+	if err := json.NewEncoder(w).Encode(admissionReview); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

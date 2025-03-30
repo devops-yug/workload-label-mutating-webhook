@@ -18,7 +18,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ include "webhook.serviceAccountName" . }}
-    namespace: default
+    namespace: {{ include "webhook.fullname" . }}
 roleRef:
   kind: ClusterRole
   name: {{ include "webhook.fullname" . }}-role
@@ -29,6 +29,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ include "webhook.serviceAccountName" . }}
+  namespace: {{ include "webhook.fullname" . }}
   labels:
     {{- include "webhook.labels" . | nindent 4 }}
   {{- with .Values.serviceAccount.annotations }}
